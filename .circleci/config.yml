@@ -18,9 +18,6 @@ jobs:
           name: Update sdk
           command: yes | sdkmanager --update || exit 0
       - run:
-          name: Install Gradle Wrapper
-          command: gradle wrapper
-      - run:
           name: Download Dependencies
           command: ./gradlew androidDependencies
       - save_cache:
