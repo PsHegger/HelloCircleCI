@@ -12,12 +12,6 @@ jobs:
       - restore_cache:
           key: jars-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}
       - run:
-          name: Accept Terms
-          command: yes | sdkmanager --licenses || exit 0
-      - run:
-          name: Update sdk
-          command: yes | sdkmanager --update || exit 0
-      - run:
           name: Download Dependencies
           command: ./gradlew androidDependencies
       - save_cache:
@@ -65,15 +59,29 @@ jobs:
 #      - store_test_results:
 #          path: app/build/test-results
   ui_test:
-    pre:
-      - emulator -avd circleci-android28 -no-audio -no-window:
+    working_directory: ~/code
+    docker:
+      - image: circleci/android:api-28
+    environment:
+      JVM_OPTS: -Xmx3200m
+    steps:
+      - checkout
+      - restore_cache:
+        key: jars-{{ checksum "build.gradle.kts" }}-{{ checksum "app/build.gradle.kts" }}
+      - run:
+          name: Launch emulator
+          command: emulator -avd circleci-android28 -no-window
           background: true
           parallel: true
-      - circle-android wait-for-boot
-      - sleep 30
-      - adb shell input keyevent 82
-    override:
-      - ./gradlew connectedDebugAndroidTest
+      - run:
+          name: Wait for emulator
+          command: |
+            circleci-android wait-for-boot
+            sleep 30
+            adb shell input keyevent 82
+      - run:
+          name: Run tests
+          command: ./gradlew connectedDebugAndroidTest
 
 workflows:
   version: 2
